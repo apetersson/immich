@@ -137,8 +137,8 @@ class _FixedSegmentRow extends ConsumerWidget {
         future: timelineService.loadAssets(assetIndex, assetCount),
         builder: (context, snapshot) {
           return _buildAssetRow(context, snapshot.data);
-      },
-    );
+        },
+      );
     }
   }
 
@@ -235,14 +235,12 @@ class _AssetTileWidget extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () => lockSelection || asset == null ? null : _handleOnTap(context, ref, assetIndex, asset, heroOffset),
-        onLongPress: () => lockSelection || asset == null
-          ? null
-          : _handleOnLongPress(ref, asset),
-        child: ThumbnailTile(
-          asset,
-          lockSelection: lockSelection,
-          showStorageIndicator: showStorageIndicator,
-          heroOffset: heroOffset,
+      onLongPress: () => lockSelection || asset == null ? null : _handleOnLongPress(ref, asset),
+      child: ThumbnailTile(
+        asset,
+        lockSelection: lockSelection,
+        showStorageIndicator: showStorageIndicator,
+        heroOffset: heroOffset,
       ),
     );
   }
