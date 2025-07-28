@@ -21,7 +21,6 @@
     "test": "vitest --config test/vitest.config.mjs",
     "test:cov": "vitest --config test/vitest.config.mjs --coverage",
     "test:medium": "vitest --config test/vitest.config.medium.mjs",
-    "typeorm": "typeorm",
     "lifecycle": "node ./dist/utils/lifecycle.js",
     "migrations:debug": "node ./dist/bin/migrations.js debug",
     "migrations:generate": "node ./dist/bin/migrations.js generate",
@@ -108,7 +107,6 @@
     "socket.io": "^4.8.1",
     "tailwindcss-preset-email": "^1.4.0",
     "thumbhash": "^0.1.1",
-    "typeorm": "^0.3.17",
     "ua-parser-js": "^2.0.0",
     "validator": "^13.12.0"
   },

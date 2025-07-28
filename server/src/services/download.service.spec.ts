@@ -1,11 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
+import { Readable } from 'node:stream';
 import { APP_MEDIA_LOCATION } from 'src/constants';
 import { DownloadResponseDto } from 'src/dtos/download.dto';
 import { DownloadService } from 'src/services/download.service';
 import { assetStub } from 'test/fixtures/asset.stub';
 import { authStub } from 'test/fixtures/auth.stub';
 import { makeStream, newTestService, ServiceMocks } from 'test/utils';
-import { Readable } from 'typeorm/platform/PlatformTools.js';
 import { vitest } from 'vitest';
 
 const downloadResponse: DownloadResponseDto = {
