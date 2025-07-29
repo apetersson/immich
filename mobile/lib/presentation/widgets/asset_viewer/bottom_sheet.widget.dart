@@ -18,6 +18,7 @@ import 'package:immich_mobile/presentation/widgets/action_buttons/trash_action_b
 import 'package:immich_mobile/presentation/widgets/action_buttons/upload_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/bottom_sheet/location_details.widget.dart';
 import 'package:immich_mobile/presentation/widgets/bottom_sheet/base_bottom_sheet.widget.dart';
+import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/current_asset.provider.dart';
 import 'package:immich_mobile/providers/routes.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
@@ -140,12 +141,22 @@ class _AssetDetailBottomSheet extends ConsumerWidget {
     final exifInfo = ref.watch(currentAssetExifProvider).valueOrNull;
     final cameraTitle = _getCameraInfoTitle(exifInfo);
 
+    Future<void> editDateTime() async {
+      await ref.read(actionProvider.notifier).editDateTime(ActionSource.viewer, context);
+    }
+
     return SliverList.list(
       children: [
         // Asset Date and Time
         _SheetTile(
           title: _getDateTime(context, asset),
           titleStyle: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          trailing: IconButton(
+            icon: const Icon(Icons.edit, size: 18),
+            onPressed: () async {
+              await editDateTime();
+            },
+          ),
         ),
         const SheetLocationDetails(),
         // Details header
@@ -189,11 +200,19 @@ class _AssetDetailBottomSheet extends ConsumerWidget {
 class _SheetTile extends StatelessWidget {
   final String title;
   final Widget? leading;
+  final Widget? trailing;
   final String? subtitle;
   final TextStyle? titleStyle;
   final TextStyle? subtitleStyle;
 
-  const _SheetTile({required this.title, this.titleStyle, this.leading, this.subtitle, this.subtitleStyle});
+  const _SheetTile({
+    required this.title,
+    this.titleStyle,
+    this.leading,
+    this.subtitle,
+    this.subtitleStyle,
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -229,6 +248,7 @@ class _SheetTile extends StatelessWidget {
       title: titleWidget,
       titleAlignment: ListTileTitleAlignment.center,
       leading: leading,
+      trailing: trailing,
       contentPadding: leading == null ? null : const EdgeInsets.only(left: 25),
       subtitle: subtitleWidget,
     );
