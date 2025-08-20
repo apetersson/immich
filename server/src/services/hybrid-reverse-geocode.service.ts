@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { MapRepository } from 'src/repositories/map.repository';
+import { GeoPoint, MapRepository, ReverseGeocodeResult } from 'src/repositories/map.repository';
 import { NominatimService } from 'src/services/nominatim.service';
 
 @Injectable()
@@ -9,5 +9,13 @@ export class HybridReverseGeocodeService {
     private nominatimService: NominatimService,
   ) {}
 
-  // TODO: Implement reverse geocoding logic here
+  async reverseGeocode(point: GeoPoint): Promise<ReverseGeocodeResult | null> {
+    let result = await this.nominatimService.reverseGeocode(point);
+
+    if (result === null) {
+      result = await this.mapRepository.reverseGeocode(point);
+    }
+
+    return result;
+  }
 }

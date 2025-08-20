@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { GeoPoint, ReverseGeocodeResult } from 'src/repositories/map.repository';
 import { BaseService } from 'src/services/base.service';
 
-
 @Injectable()
 export class NominatimService extends BaseService {
   async reverseGeocode(point: GeoPoint): Promise<ReverseGeocodeResult | null> {

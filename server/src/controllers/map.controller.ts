@@ -8,12 +8,16 @@ import {
   MapReverseGeocodeResponseDto,
 } from 'src/dtos/map.dto';
 import { Auth, Authenticated } from 'src/middleware/auth.guard';
+import { HybridReverseGeocodeService } from 'src/services/hybrid-reverse-geocode.service';
 import { MapService } from 'src/services/map.service';
 
 @ApiTags('Map')
 @Controller('map')
 export class MapController {
-  constructor(private service: MapService) {}
+  constructor(
+    private service: MapService,
+    private readonly hybridReverseGeocodeService: HybridReverseGeocodeService,
+  ) {}
 
   @Get('markers')
   @Authenticated()
@@ -24,7 +28,8 @@ export class MapController {
   @Authenticated()
   @Get('reverse-geocode')
   @HttpCode(HttpStatus.OK)
-  reverseGeocode(@Query() dto: MapReverseGeocodeDto): Promise<MapReverseGeocodeResponseDto[]> {
-    return this.service.reverseGeocode(dto);
+  async reverseGeocode(@Query() dto: MapReverseGeocodeDto): Promise<MapReverseGeocodeResponseDto[]> {
+    const result = await this.hybridReverseGeocodeService.reverseGeocode({ latitude: dto.lat, longitude: dto.lon });
+    return result ? [result] : [];
   }
 }

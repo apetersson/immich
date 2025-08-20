@@ -21,13 +21,56 @@ import {
   QueueName,
   SourceType,
 } from 'src/enum';
-import { ArgOf } from 'src/repositories/event.repository';
-import { ReverseGeocodeResult } from 'src/repositories/map.repository';
-import { ImmichTags } from 'src/repositories/metadata.repository';
+import { AccessRepository } from 'src/repositories/access.repository';
+import { ActivityRepository } from 'src/repositories/activity.repository';
+import { AlbumUserRepository } from 'src/repositories/album-user.repository';
+import { AlbumRepository } from 'src/repositories/album.repository';
+import { ApiKeyRepository } from 'src/repositories/api-key.repository';
+import { AssetJobRepository } from 'src/repositories/asset-job.repository';
+import { AssetRepository } from 'src/repositories/asset.repository';
+import { AuditRepository } from 'src/repositories/audit.repository';
+import { ConfigRepository } from 'src/repositories/config.repository';
+import { CronRepository } from 'src/repositories/cron.repository';
+import { CryptoRepository } from 'src/repositories/crypto.repository';
+import { DatabaseRepository } from 'src/repositories/database.repository';
+import { DownloadRepository } from 'src/repositories/download.repository';
+import { DuplicateRepository } from 'src/repositories/duplicate.repository';
+import { EmailRepository } from 'src/repositories/email.repository';
+import { ArgOf, EventRepository } from 'src/repositories/event.repository';
+import { JobRepository } from 'src/repositories/job.repository';
+import { LibraryRepository } from 'src/repositories/library.repository';
+import { LoggingRepository } from 'src/repositories/logging.repository';
+import { MachineLearningRepository } from 'src/repositories/machine-learning.repository';
+import { MapRepository, ReverseGeocodeResult } from 'src/repositories/map.repository';
+import { MediaRepository } from 'src/repositories/media.repository';
+import { MemoryRepository } from 'src/repositories/memory.repository';
+import { ImmichTags, MetadataRepository } from 'src/repositories/metadata.repository';
+import { MoveRepository } from 'src/repositories/move.repository';
+import { NotificationRepository } from 'src/repositories/notification.repository';
+import { OAuthRepository } from 'src/repositories/oauth.repository';
+import { PartnerRepository } from 'src/repositories/partner.repository';
+import { PersonRepository } from 'src/repositories/person.repository';
+import { ProcessRepository } from 'src/repositories/process.repository';
+import { SearchRepository } from 'src/repositories/search.repository';
+import { ServerInfoRepository } from 'src/repositories/server-info.repository';
+import { SessionRepository } from 'src/repositories/session.repository';
+import { SharedLinkRepository } from 'src/repositories/shared-link.repository';
+import { StackRepository } from 'src/repositories/stack.repository';
+import { StorageRepository } from 'src/repositories/storage.repository';
+import { SyncCheckpointRepository } from 'src/repositories/sync-checkpoint.repository';
+import { SyncRepository } from 'src/repositories/sync.repository';
+import { SystemMetadataRepository } from 'src/repositories/system-metadata.repository';
+import { TagRepository } from 'src/repositories/tag.repository';
+import { TelemetryRepository } from 'src/repositories/telemetry.repository';
+import { TrashRepository } from 'src/repositories/trash.repository';
+import { UserRepository } from 'src/repositories/user.repository';
+import { VersionHistoryRepository } from 'src/repositories/version-history.repository';
+import { ViewRepository } from 'src/repositories/view-repository';
 import { AssetExifTable } from 'src/schema/tables/asset-exif.table';
 import { AssetFaceTable } from 'src/schema/tables/asset-face.table';
 import { PersonTable } from 'src/schema/tables/person.table';
 import { BaseService } from 'src/services/base.service';
+import { HybridReverseGeocodeService } from 'src/services/hybrid-reverse-geocode.service';
 import { JobItem, JobOf } from 'src/types';
 import { isFaceImportEnabled } from 'src/utils/misc';
 import { upsertTags } from 'src/utils/tag';
@@ -126,6 +169,103 @@ type Dates = {
 
 @Injectable()
 export class MetadataService extends BaseService {
+  constructor(
+    protected logger: LoggingRepository,
+    protected accessRepository: AccessRepository,
+    protected activityRepository: ActivityRepository,
+    protected albumRepository: AlbumRepository,
+    protected albumUserRepository: AlbumUserRepository,
+    protected apiKeyRepository: ApiKeyRepository,
+    protected assetRepository: AssetRepository,
+    protected assetJobRepository: AssetJobRepository,
+    protected auditRepository: AuditRepository,
+    protected configRepository: ConfigRepository,
+    protected cronRepository: CronRepository,
+    protected cryptoRepository: CryptoRepository,
+    protected databaseRepository: DatabaseRepository,
+    protected downloadRepository: DownloadRepository,
+    protected duplicateRepository: DuplicateRepository,
+    protected emailRepository: EmailRepository,
+    protected eventRepository: EventRepository,
+    protected jobRepository: JobRepository,
+    protected libraryRepository: LibraryRepository,
+    protected machineLearningRepository: MachineLearningRepository,
+    protected mapRepository: MapRepository,
+    protected mediaRepository: MediaRepository,
+    protected memoryRepository: MemoryRepository,
+    protected metadataRepository: MetadataRepository,
+    protected moveRepository: MoveRepository,
+    protected notificationRepository: NotificationRepository,
+    protected oauthRepository: OAuthRepository,
+    protected partnerRepository: PartnerRepository,
+    protected personRepository: PersonRepository,
+    protected processRepository: ProcessRepository,
+    protected searchRepository: SearchRepository,
+    protected serverInfoRepository: ServerInfoRepository,
+    protected sessionRepository: SessionRepository,
+    protected sharedLinkRepository: SharedLinkRepository,
+    protected stackRepository: StackRepository,
+    protected storageRepository: StorageRepository,
+    protected syncRepository: SyncRepository,
+    protected syncCheckpointRepository: SyncCheckpointRepository,
+    protected systemMetadataRepository: SystemMetadataRepository,
+    protected tagRepository: TagRepository,
+    protected telemetryRepository: TelemetryRepository,
+    protected trashRepository: TrashRepository,
+    protected userRepository: UserRepository,
+    protected versionRepository: VersionHistoryRepository,
+    private hybridReverseGeocodeService: HybridReverseGeocodeService,
+    protected viewRepository: ViewRepository,
+  ) {
+    super(
+      logger,
+      accessRepository,
+      activityRepository,
+      albumRepository,
+      albumUserRepository,
+      apiKeyRepository,
+      assetRepository,
+      assetJobRepository,
+      auditRepository,
+      configRepository,
+      cronRepository,
+      cryptoRepository,
+      databaseRepository,
+      downloadRepository,
+      duplicateRepository,
+      emailRepository,
+      eventRepository,
+      jobRepository,
+      libraryRepository,
+      machineLearningRepository,
+      mapRepository,
+      mediaRepository,
+      memoryRepository,
+      metadataRepository,
+      moveRepository,
+      notificationRepository,
+      oauthRepository,
+      partnerRepository,
+      personRepository,
+      processRepository,
+      searchRepository,
+      serverInfoRepository,
+      sessionRepository,
+      sharedLinkRepository,
+      stackRepository,
+      storageRepository,
+      syncRepository,
+      syncCheckpointRepository,
+      systemMetadataRepository,
+      tagRepository,
+      telemetryRepository,
+      trashRepository,
+      userRepository,
+      versionRepository,
+      viewRepository,
+    );
+  }
+
   @OnEvent({ name: 'AppBootstrap', workers: [ImmichWorker.Microservices] })
   async onBootstrap() {
     this.logger.log('Bootstrapping metadata service');
@@ -231,14 +371,14 @@ export class MetadataService extends BaseService {
     const dates = this.getDates(asset, exifTags, stats);
 
     const { width, height } = this.getImageDimensions(exifTags);
-    let geo: ReverseGeocodeResult = { country: null, state: null, city: null },
+    let geo: ReverseGeocodeResult | null = { country: null, state: null, city: null },
       latitude: number | null = null,
       longitude: number | null = null;
     if (this.hasGeo(exifTags)) {
       latitude = exifTags.GPSLatitude;
       longitude = exifTags.GPSLongitude;
       if (reverseGeocoding.enabled) {
-        geo = await this.mapRepository.reverseGeocode({ latitude, longitude });
+        geo = await this.hybridReverseGeocodeService.reverseGeocode({ latitude, longitude });
       }
     }
 
@@ -253,9 +393,9 @@ export class MetadataService extends BaseService {
       // gps
       latitude,
       longitude,
-      country: geo.country,
-      state: geo.state,
-      city: geo.city,
+      country: geo ? geo.country : null,
+      state: geo ? geo.state : null,
+      city: geo ? geo.city : null,
 
       // image/file
       fileSizeInByte: stats.size,
