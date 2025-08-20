@@ -22,15 +22,32 @@ import {
   SourceType,
 } from 'src/enum';
 import { ArgOf } from 'src/repositories/event.repository';
-import { ReverseGeocodeResult } from 'src/repositories/map.repository';
+import {  ReverseGeocodeResult } from 'src/repositories/map.repository';
 import { ImmichTags } from 'src/repositories/metadata.repository';
 import { AssetExifTable } from 'src/schema/tables/asset-exif.table';
 import { AssetFaceTable } from 'src/schema/tables/asset-face.table';
 import { PersonTable } from 'src/schema/tables/person.table';
-import { BaseService } from 'src/services/base.service';
+import { ConfigRepository } from 'src/repositories/config.repository';
+import { JobRepository } from 'src/repositories/job.repository';
+import { MapService } from 'src/services/map.service';
+import { AssetRepository } from 'src/repositories/asset.repository';
+import { AlbumRepository } from 'src/repositories/album.repository';
+import { EventRepository } from 'src/repositories/event.repository';
+import { AssetJobRepository } from 'src/repositories/asset-job.repository';
+import { StorageRepository } from 'src/repositories/storage.repository';
+import { TagRepository } from 'src/repositories/tag.repository';
+import { CryptoRepository } from 'src/repositories/crypto.repository';
+import { UserRepository } from 'src/repositories/user.repository';
+import { PersonRepository } from 'src/repositories/person.repository';
+import { MediaRepository } from 'src/repositories/media.repository';
+import { MetadataRepository } from 'src/repositories/metadata.repository';
+import { LoggingRepository } from 'src/repositories/logging.repository';
+import { SystemMetadataRepository } from 'src/repositories/system-metadata.repository';
+import { MoveRepository } from 'src/repositories/move.repository';
 import { JobItem, JobOf } from 'src/types';
 import { isFaceImportEnabled } from 'src/utils/misc';
 import { upsertTags } from 'src/utils/tag';
+import { getConfig } from 'src/utils/config';
 
 /** look for a date from these tags (in order) */
 const EXIF_DATE_TAGS: Array<keyof ImmichTags> = [
@@ -125,42 +142,42 @@ type Dates = {
 };
 
 @Injectable()
-export class MetadataService extends BaseService {
-  @OnEvent({ name: 'AppBootstrap', workers: [ImmichWorker.Microservices] })
-  async onBootstrap() {
-    this.logger.log('Bootstrapping metadata service');
-    await this.init();
+export class MetadataService {
+  private storageCore: StorageCore;
+
+  constructor(
+    private logger: LoggingRepository,
+    private configRepository: ConfigRepository,
+    private jobRepository: JobRepository,
+    private mapService: MapService,
+    private assetRepository: AssetRepository,
+    private albumRepository: AlbumRepository,
+    private eventRepository: EventRepository,
+    private assetJobRepository: AssetJobRepository,
+    private storageRepository: StorageRepository,
+    private tagRepository: TagRepository,
+    private cryptoRepository: CryptoRepository,
+    private moveRepository: MoveRepository,
+    private userRepository: UserRepository,
+    private personRepository: PersonRepository,
+    private mediaRepository: MediaRepository,
+    private metadataRepository: MetadataRepository,
+    private systemMetadataRepository: SystemMetadataRepository,
+
+  ) {
+    this.logger.setContext(MetadataService.name);
+    this.storageCore = StorageCore.create(
+      assetRepository,
+      configRepository,
+      cryptoRepository,
+      moveRepository,
+      personRepository,
+      storageRepository,
+      systemMetadataRepository,
+      this.logger,
+    );
   }
 
-  @OnEvent({ name: 'AppShutdown' })
-  async onShutdown() {
-    await this.metadataRepository.teardown();
-  }
-
-  @OnEvent({ name: 'ConfigInit', workers: [ImmichWorker.Microservices] })
-  onConfigInit({ newConfig }: ArgOf<'ConfigInit'>) {
-    this.metadataRepository.setMaxConcurrency(newConfig.job.metadataExtraction.concurrency);
-  }
-
-  @OnEvent({ name: 'ConfigUpdate', workers: [ImmichWorker.Microservices], server: true })
-  onConfigUpdate({ newConfig }: ArgOf<'ConfigUpdate'>) {
-    this.metadataRepository.setMaxConcurrency(newConfig.job.metadataExtraction.concurrency);
-  }
-
-  private async init() {
-    this.logger.log('Initializing metadata service');
-
-    try {
-      await this.jobRepository.pause(QueueName.MetadataExtraction);
-      await this.databaseRepository.withLock(DatabaseLock.GeodataImport, () => this.mapRepository.init());
-      await this.jobRepository.resume(QueueName.MetadataExtraction);
-
-      this.logger.log(`Initialized local reverse geocoder`);
-    } catch (error: Error | any) {
-      this.logger.error(`Unable to initialize reverse geocoding: ${error}`, error?.stack);
-      throw new Error(`Metadata service init failed`);
-    }
-  }
 
   private async linkLivePhotos(
     asset: { id: string; type: AssetType; ownerId: string; libraryId: string | null },
@@ -214,7 +231,7 @@ export class MetadataService extends BaseService {
   @OnJob({ name: JobName.AssetExtractMetadata, queue: QueueName.MetadataExtraction })
   async handleMetadataExtraction(data: JobOf<JobName.AssetExtractMetadata>) {
     const [{ metadata, reverseGeocoding }, asset] = await Promise.all([
-      this.getConfig({ withCache: true }),
+      getConfig({ withCache: true }),
       this.assetJobRepository.getForMetadataExtraction(data.id),
     ]);
 
@@ -238,7 +255,7 @@ export class MetadataService extends BaseService {
       latitude = exifTags.GPSLatitude;
       longitude = exifTags.GPSLongitude;
       if (reverseGeocoding.enabled) {
-        geo = await this.mapRepository.reverseGeocode({ latitude, longitude });
+        geo = (await this.mapService.reverseGeocode({ lat: latitude, lon: longitude }))[0];
       }
     }
 
@@ -404,7 +421,7 @@ export class MetadataService extends BaseService {
      * For RAW images in the CR2 or RAF format, the "ImageSize" value seems to be correct,
      * but ImageWidth and ImageHeight are not correct (they contain the dimensions of the preview image).
      */
-    let [width, height] = exifTags.ImageSize?.split('x').map((dim) => Number.parseInt(dim) || undefined) || [];
+    let [width, height] = exifTags.ImageSize?.split('x').map((dim: string) => Number.parseInt(dim) || undefined) || [];
     if (!width || !height) {
       [width, height] = [exifTags.ImageWidth, exifTags.ImageHeight];
     }
@@ -782,7 +799,7 @@ export class MetadataService extends BaseService {
     const tag = result?.tag;
     const dateTime = result?.dateTime;
     this.logger.verbose(
-      `Date and time is ${dateTime} using exifTag ${tag} for asset ${asset.id}: ${asset.originalPath}`,
+      `Date and time is ${dateTime} using exifTag ${String(tag)} for asset ${asset.id}: ${asset.originalPath}`,
     );
 
     // timezone
@@ -860,7 +877,7 @@ export class MetadataService extends BaseService {
   private async getVideoTags(originalPath: string) {
     const { videoStreams, format } = await this.mediaRepository.probe(originalPath);
 
-    const tags: Pick<ImmichTags, 'Duration' | 'Orientation'> = {};
+    const tags: Pick<ImmichTags, 'Duration' | 'Orientation'> = { Orientation: undefined };
 
     if (videoStreams[0]) {
       switch (videoStreams[0].rotation) {
