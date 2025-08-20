@@ -106,6 +106,10 @@ export class EnvDto {
   @Optional()
   IMMICH_THIRD_PARTY_SUPPORT_URL?: string;
 
+  @IsString()
+  @Optional()
+  IMMICH_NOMINATIM_URL?: string;
+
   @IsIPRange({ requireCIDR: false }, { each: true })
   @Transform(({ value }) =>
     value && typeof value === 'string'

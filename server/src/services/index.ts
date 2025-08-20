@@ -12,12 +12,14 @@ import { CliService } from 'src/services/cli.service';
 import { DatabaseService } from 'src/services/database.service';
 import { DownloadService } from 'src/services/download.service';
 import { DuplicateService } from 'src/services/duplicate.service';
+import { HybridReverseGeocodeService } from 'src/services/hybrid-reverse-geocode.service';
 import { JobService } from 'src/services/job.service';
 import { LibraryService } from 'src/services/library.service';
 import { MapService } from 'src/services/map.service';
 import { MediaService } from 'src/services/media.service';
 import { MemoryService } from 'src/services/memory.service';
 import { MetadataService } from 'src/services/metadata.service';
+import { NominatimService } from 'src/services/nominatim.service';
 import { NotificationAdminService } from 'src/services/notification-admin.service';
 import { NotificationService } from 'src/services/notification.service';
 import { PartnerService } from 'src/services/partner.service';
@@ -64,6 +66,8 @@ export const services = [
   MetadataService,
   NotificationService,
   NotificationAdminService,
+  NominatimService,
+  HybridReverseGeocodeService,
   PartnerService,
   PersonService,
   SearchService,

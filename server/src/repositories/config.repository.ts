@@ -104,6 +104,7 @@ export interface EnvData {
 
   noColor: boolean;
   nodeVersion?: string;
+  nominatimUrl?: string;
 }
 
 const productionKeys = {
@@ -320,6 +321,7 @@ const getEnv = (): EnvData => {
     workers,
 
     noColor: !!dto.NO_COLOR,
+    nominatimUrl: dto.IMMICH_NOMINATIM_URL,
   };
 };
 

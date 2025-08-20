@@ -292,7 +292,7 @@ describe(MetadataService.name, () => {
     it('should apply reverse geocoding', async () => {
       mocks.assetJob.getForMetadataExtraction.mockResolvedValue(assetStub.withLocation);
       mocks.systemMetadata.get.mockResolvedValue({ reverseGeocoding: { enabled: true } });
-      mocks.map.reverseGeocode.mockResolvedValue({ city: 'City', state: 'State', country: 'Country' });
+      mocks.hybridReverseGeocode.reverseGeocode.mockResolvedValue({ city: 'City', state: 'State', country: 'Country' });
       mocks.storage.stat.mockResolvedValue({
         size: 123_456,
         mtime: assetStub.withLocation.fileModifiedAt,
