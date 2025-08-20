@@ -62,10 +62,11 @@ Create a new service, e.g., `server/src/services/nominatim.service.ts`, responsi
         *   `city`: "Fontvieille" (from `<suburb>`)
         *   `state`: "MC-FO" (from `<ISO3166-2-lvl10>`) - *Consider if this needs to be human-readable or if the code is sufficient for Immich's current use.*
 
-5.  **Error Handling:**
+5.  **Rank Cutoff and Error Handling:**
+    *   **Implement a `minRank` threshold:** If the `place_rank` (or `address_rank`) of the Nominatim result is below a configurable threshold (e.g., `10` for country-level results), consider it an "unsuccessful" lookup. This prevents "half-baked" results from being used.
     *   Handle network errors (e.g., Nominatim instance is down, timeout).
     *   Handle Nominatim's "Unable to geocode" error response (when it doesn't know the place).
-    *   Return `null` or an empty `ReverseGeocodeResult` in case of errors or no results from Nominatim.
+    *   Return `null` or an empty `ReverseGeocodeResult` in case of errors, no results, or results below the `minRank` threshold.
 
 ### 3.3. Fallback Logic in `MapRepository`
 
@@ -75,21 +76,22 @@ Modify `server/src/repositories/map.repository.ts` to integrate the Nominatim se
 2.  **Conditional Reverse Geocoding:**
     *   In the `reverseGeocode` method, check if `IMMICH_NOMINATIM_URL` is configured.
     *   If configured, attempt to call `NominatimService.reverseGeocode(point)`.
-    *   If Nominatim returns a valid result (not null/empty), return that result.
-    *   If Nominatim returns null/empty (due to error or "Unable to geocode"), then proceed with Immich's existing local geocoding logic (querying `geodata_places` and `naturalearth_countries`).
+    *   If Nominatim returns a valid result (not null/empty, and meets the rank cutoff), return that result.
+    *   If Nominatim returns null/empty (due to error, "Unable to geocode", or failing the rank cutoff), then proceed with Immich's existing local geocoding logic (querying `geodata_places` and `naturalearth_countries`).
 
 ### 3.4. Testing Strategy
 
 1.  **Unit Tests for `NominatimService`:**
     *   Test successful API calls and correct parsing/mapping for various Nominatim responses (including different place types like city, town, village, suburb).
     *   Test error cases (network issues, "Unable to geocode" responses).
+    *   Test rank cutoff logic with various `place_rank` values.
 2.  **Integration Tests for `MapRepository`:**
-    *   Test scenarios where Nominatim provides a result.
-    *   Test scenarios where Nominatim fails, and the fallback to local geocoder works correctly.
+    *   Test scenarios where Nominatim provides a result (and meets rank cutoff).
+    *   Test scenarios where Nominatim fails or provides a result below rank cutoff, and the fallback to local geocoder works correctly.
     *   Test with and without the `IMMICH_NOMINATIM_URL` environment variable set.
 3.  **End-to-End Tests:**
     *   Deploy Immich with a Nominatim instance (e.g., using `nominatim-docker`).
-    *   Upload assets with known coordinates (both within Monaco and outside) and verify the displayed location information.
+    *   Upload assets with known coordinates (both within Monaco and outside, including areas that produce "half-baked" Nominatim results) and verify the displayed location information.
 
 ### 3.5. Deployment Considerations
 
