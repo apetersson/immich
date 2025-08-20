@@ -62,6 +62,7 @@ export const services = [
   MapService,
   MediaService,
   MemoryService,
+  MetadataService,
   NotificationService,
   NotificationAdminService,
   NominatimService,
