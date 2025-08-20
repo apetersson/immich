@@ -169,6 +169,17 @@ type Dates = {
 
 @Injectable()
 export class MetadataService extends BaseService {
+  @OnEvent({ name: 'AppBootstrap', workers: [ImmichWorker.Microservices] })
+  async onBootstrap() {
+    this.logger.log('Bootstrapping metadata service');
+    await this.init();
+  }
+
+  @OnEvent({ name: 'AppShutdown' })
+  async onShutdown() {
+    await this.metadataRepository.teardown();
+  }
+
   constructor(
     protected logger: LoggingRepository,
     protected accessRepository: AccessRepository,
@@ -214,8 +225,8 @@ export class MetadataService extends BaseService {
     protected trashRepository: TrashRepository,
     protected userRepository: UserRepository,
     protected versionRepository: VersionHistoryRepository,
-    private hybridReverseGeocodeService: HybridReverseGeocodeService,
     protected viewRepository: ViewRepository,
+    private hybridReverseGeocodeService: HybridReverseGeocodeService,
   ) {
     super(
       logger,
@@ -264,17 +275,6 @@ export class MetadataService extends BaseService {
       versionRepository,
       viewRepository,
     );
-  }
-
-  @OnEvent({ name: 'AppBootstrap', workers: [ImmichWorker.Microservices] })
-  async onBootstrap() {
-    this.logger.log('Bootstrapping metadata service');
-    await this.init();
-  }
-
-  @OnEvent({ name: 'AppShutdown' })
-  async onShutdown() {
-    await this.metadataRepository.teardown();
   }
 
   @OnEvent({ name: 'ConfigInit', workers: [ImmichWorker.Microservices] })

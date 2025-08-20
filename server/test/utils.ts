@@ -58,6 +58,7 @@ import { ViewRepository } from 'src/repositories/view-repository';
 import { DB } from 'src/schema';
 import { AuthService } from 'src/services/auth.service';
 import { BaseService } from 'src/services/base.service';
+import { HybridReverseGeocodeService } from 'src/services/hybrid-reverse-geocode.service';
 import { RepositoryInterface } from 'src/types';
 import { asPostgresConnectionConfig, getKyselyConfig } from 'src/utils/database';
 import { IAccessRepositoryMock, newAccessRepositoryMock } from 'test/repositories/access.repository.mock';
@@ -225,6 +226,7 @@ export type ServiceOverrides = {
   user: UserRepository;
   versionHistory: VersionHistoryRepository;
   view: ViewRepository;
+  hybridReverseGeocode: HybridReverseGeocodeService;
 };
 
 type As<T> = T extends RepositoryInterface<infer U> ? U : never;
@@ -232,7 +234,7 @@ type IAccessRepository = { [K in keyof AccessRepository]: RepositoryInterface<Ac
 
 export type ServiceMocks = {
   [K in keyof Omit<ServiceOverrides, 'access' | 'telemetry'>]: Mocked<RepositoryInterface<ServiceOverrides[K]>>;
-} & { access: IAccessRepositoryMock; telemetry: ITelemetryRepositoryMock };
+} & { access: IAccessRepositoryMock; telemetry: ITelemetryRepositoryMock; hybridReverseGeocode: Mocked<HybridReverseGeocodeService> };
 
 type BaseServiceArgs = ConstructorParameters<typeof BaseService>;
 type Constructor<Type, Args extends Array<any>> = {
@@ -270,6 +272,7 @@ export const newTestService = <T extends BaseService>(
     apiKey: automock(ApiKeyRepository),
     library: automock(LibraryRepository, { strict: false }),
     machineLearning: automock(MachineLearningRepository, { args: [loggerMock], strict: false }),
+    hybridReverseGeocode: automock(HybridReverseGeocodeService),
     map: automock(MapRepository, { args: [undefined, undefined, { setContext: () => {} }] }),
     media: newMediaRepositoryMock(),
     memory: automock(MemoryRepository),
@@ -346,6 +349,7 @@ export const newTestService = <T extends BaseService>(
     overrides.user || (mocks.user as As<UserRepository>),
     overrides.versionHistory || (mocks.versionHistory as As<VersionHistoryRepository>),
     overrides.view || (mocks.view as As<ViewRepository>),
+    overrides.hybridReverseGeocode || (mocks.hybridReverseGeocode as HybridReverseGeocodeService),
   );
 
   return {

@@ -7,6 +7,7 @@ import { MapAsset } from 'src/dtos/asset-response.dto';
 import { AssetType, AssetVisibility, ExifOrientation, ImmichWorker, JobName, JobStatus, SourceType } from 'src/enum';
 import { ImmichTags } from 'src/repositories/metadata.repository';
 import { firstDateTime, MetadataService } from 'src/services/metadata.service';
+import { HybridReverseGeocodeService } from 'src/services/hybrid-reverse-geocode.service';
 import { assetStub } from 'test/fixtures/asset.stub';
 import { fileStub } from 'test/fixtures/file.stub';
 import { probeStub } from 'test/fixtures/media.stub';
@@ -292,7 +293,7 @@ describe(MetadataService.name, () => {
     it('should apply reverse geocoding', async () => {
       mocks.assetJob.getForMetadataExtraction.mockResolvedValue(assetStub.withLocation);
       mocks.systemMetadata.get.mockResolvedValue({ reverseGeocoding: { enabled: true } });
-      mocks.map.reverseGeocode.mockResolvedValue({ city: 'City', state: 'State', country: 'Country' });
+      mocks.hybridReverseGeocode.reverseGeocode.mockResolvedValue({ city: 'City', state: 'State', country: 'Country' });
       mocks.storage.stat.mockResolvedValue({
         size: 123_456,
         mtime: assetStub.withLocation.fileModifiedAt,

@@ -30,6 +30,6 @@ export class MapController {
   @HttpCode(HttpStatus.OK)
   async reverseGeocode(@Query() dto: MapReverseGeocodeDto): Promise<MapReverseGeocodeResponseDto[]> {
     const result = await this.hybridReverseGeocodeService.reverseGeocode({ latitude: dto.lat, longitude: dto.lon });
-    return result ? [result] : [];
+    return result ? [result as MapReverseGeocodeResponseDto] : [];
   }
 }
