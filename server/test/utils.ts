@@ -234,7 +234,11 @@ type IAccessRepository = { [K in keyof AccessRepository]: RepositoryInterface<Ac
 
 export type ServiceMocks = {
   [K in keyof Omit<ServiceOverrides, 'access' | 'telemetry'>]: Mocked<RepositoryInterface<ServiceOverrides[K]>>;
-} & { access: IAccessRepositoryMock; telemetry: ITelemetryRepositoryMock; hybridReverseGeocode: Mocked<HybridReverseGeocodeService> };
+} & {
+  access: IAccessRepositoryMock;
+  telemetry: ITelemetryRepositoryMock;
+  hybridReverseGeocode: Mocked<HybridReverseGeocodeService>;
+};
 
 type BaseServiceArgs = ConstructorParameters<typeof BaseService>;
 type Constructor<Type, Args extends Array<any>> = {

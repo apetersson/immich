@@ -7,7 +7,6 @@ import { MapAsset } from 'src/dtos/asset-response.dto';
 import { AssetType, AssetVisibility, ExifOrientation, ImmichWorker, JobName, JobStatus, SourceType } from 'src/enum';
 import { ImmichTags } from 'src/repositories/metadata.repository';
 import { firstDateTime, MetadataService } from 'src/services/metadata.service';
-import { HybridReverseGeocodeService } from 'src/services/hybrid-reverse-geocode.service';
 import { assetStub } from 'test/fixtures/asset.stub';
 import { fileStub } from 'test/fixtures/file.stub';
 import { probeStub } from 'test/fixtures/media.stub';
