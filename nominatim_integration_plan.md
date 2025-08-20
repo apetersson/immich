@@ -40,27 +40,50 @@ Create a new service, e.g., `server/src/services/nominatim.service.ts`, responsi
     *   Focus on extracting data from the `<addressparts>` and `<result>` tags.
 
 4.  **Field Mapping to `ReverseGeocodeResult`:**
-    This is critical for ensuring data consistency with Immich's existing structure.
+    This is critical for ensuring data consistency with Immich's existing structure. The goal is to map Nominatim's detailed response to Immich's `country`, `state`, and `city` fields, with `state` representing the highest-level subdivision smaller than country, and `city` containing all other granular details.
 
     *   **`country`**: Map directly from `<country>` in `<addressparts>`.
     *   **`countryCode`**: Map directly from `<country_code>` in `<addressparts>`.
-    *   **`city`**: This requires a hierarchical approach due to Nominatim's varied place types. Prioritize in this order:
-        *   `<city>`
-        *   `<town>`
-        *   `<village>`
-        *   `<hamlet>`
-        *   `<suburb>` (as seen in the Monaco example)
-        *   If none of the above are present, consider other relevant fields like `<county>` or `<state_district>` if they represent a more specific urban area.
-    *   **`state`**: This should represent the primary administrative division. Prioritize:
-        *   `<state>`
+    *   **`state`**: This should represent the highest-level administrative subdivision smaller than the country. Prioritize in this order, taking the first available:
         *   `<region>`
-        *   `<county>` (if `city` is already mapped from a more specific type)
-        *   `<ISO3166-2-lvlX>` (as seen in the Monaco example, `MC-FO` for Fontvieille) - *Consider if this needs to be human-readable or if the code is sufficient for Immich's current use.*
+        *   `<state>`
+        *   `<ISO3166-2-lvlX>` (e.g., `ISO3166-2-lvl4`, `ISO3166-2-lvl6`, etc. - pick the highest level available)
+        *   `<county>`
+        *   `<state_district>`
+        *   `<city_district>` (if it represents a significant administrative division, like a "bezirk")
+        *   If none of the above are present, `state` will be `null`.
+    *   **`city`**: This field will be a comma-separated string containing all other granular location details, ordered from most specific to least specific. Prioritize and concatenate, taking the first available from each group and then adding others:
+        *   **Specific Address/Place:**
+            *   `<house_number>`
+            *   `<house_name>`
+            *   `<road>`
+            *   `<leisure>`, `<shop>`, `<tourism>`, etc. (specific point of interest names)
+        *   **Localities/Subdivisions:**
+            *   `<hamlet>`
+            *   `<croft>`
+            *   `<isolated_dwelling>`
+            *   `<suburb>`
+            *   `<village>`
+            *   `<town>`
+            *   `<city>`
+        *   **Other relevant details (if not used for `state`):**
+            *   `<postcode>`
+            *   `<district>` (if not `city_district` and not used for `state`)
+            *   `<borough>`
+            *   `<subdivision>`
+            *   `<neighbourhood>`
+            *   `<allotments>`
+            *   `<quarter>`
 
-    *   **Example Mapping (Monaco):**
-        *   `country`: "Monaco"
-        *   `city`: "Fontvieille" (from `<suburb>`)
-        *   `state`: "MC-FO" (from `<ISO3166-2-lvl10>`) - *Consider if this needs to be human-readable or if the code is sufficient for Immich's current use.*
+    *   **Example Mapping (Monaco: Princess Grace Rose Garden, Avenue des Guelfes, Fontvieille, Monaco, 98020, Monaco):**
+        *   `country`: "Monaco" (from `<country>`)
+        *   `state`: "MC-FO" (from `<ISO3166-2-lvl10>`) - *Assuming this is the highest-level subdivision smaller than country.*
+        *   `city`: "Princess Grace Rose Garden, Avenue des Guelfes, Fontvieille, 98020" (concatenation of `<leisure>`, `<road>`, `<suburb>`, `<postcode>`)
+
+    *   **Example Mapping (Niger: for lat=22&lon=11, only country returned):**
+        *   `country`: "Niger"
+        *   `state`: `null` (as no smaller subdivision is returned)
+        *   `city`: `null` (as no granular details are returned)
 
 5.  **Rank Cutoff and Error Handling:**
     *   **Implement a `minRank` threshold:** If the `place_rank` (or `address_rank`) of the Nominatim result is below a configurable threshold (e.g., `10` for country-level results), consider it an "unsuccessful" lookup. This prevents "half-baked" results from being used.
