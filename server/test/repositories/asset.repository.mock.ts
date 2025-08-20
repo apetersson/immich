@@ -2,8 +2,12 @@ import { AssetRepository } from 'src/repositories/asset.repository';
 import { RepositoryInterface } from 'src/types';
 import { Mocked, vitest } from 'vitest';
 
-export const newAssetRepositoryMock = (): Mocked<RepositoryInterface<AssetRepository>> => {
+import { Kysely } from 'kysely';
+import { DB } from 'src/schema';
+
+export const newAssetRepositoryMock = (db: Kysely<DB> = {} as Kysely<DB>): Mocked<AssetRepository> => {
   return {
+    db, // Add db property
     create: vitest.fn(),
     createAll: vitest.fn(),
     upsertExif: vitest.fn(),

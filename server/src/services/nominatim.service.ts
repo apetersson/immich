@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { GeoPoint, ReverseGeocodeResult } from 'src/repositories/map.repository';
-import { parseStringPromise } from 'xml2js';
 import { BaseService } from 'src/services/base.service';
+import { parseStringPromise } from 'xml2js';
 
 @Injectable()
-export class NominatimService  extends  BaseService {
-
+export class NominatimService extends BaseService {
   async reverseGeocode(point: GeoPoint): Promise<ReverseGeocodeResult | null> {
     const nominatimUrl = this.configRepository.getEnv().nominatimUrl;
 
@@ -132,7 +131,9 @@ export class NominatimService  extends  BaseService {
 
       return { country, state, city };
     } catch (error) {
-      this.logger.error(`Error querying Nominatim for ${point.latitude},${point.longitude}: ${(error as Error).message}`);
+      this.logger.error(
+        `Error querying Nominatim for ${point.latitude},${point.longitude}: ${(error as Error).message}`,
+      );
       return null;
     }
   }

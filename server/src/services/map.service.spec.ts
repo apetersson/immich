@@ -3,14 +3,14 @@ import { albumStub } from 'test/fixtures/album.stub';
 import { assetStub } from 'test/fixtures/asset.stub';
 import { authStub } from 'test/fixtures/auth.stub';
 import { factory } from 'test/small.factory';
-import { newTestService, ServiceMocks } from 'test/utils';
+import { newMapService, ServiceMocks } from 'test/utils';
 
 describe(MapService.name, () => {
   let sut: MapService;
   let mocks: ServiceMocks;
 
   beforeEach(() => {
-    ({ sut, mocks } = newTestService(MapService));
+    ({ sut, mocks } = newMapService());
   });
 
   describe('getMapMarkers', () => {

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { LoggingRepository } from 'src/repositories/logging.repository';
 import { MetadataRepository } from 'src/repositories/metadata.repository';
 import { MetadataService } from 'src/services/metadata.service';
-import { automock, newRandomImage, newTestService, ServiceMocks } from 'test/utils';
+import { automock, newRandomImage, newMetadataService, ServiceMocks } from 'test/utils';
 
 const metadataRepository = new MetadataRepository(
   // eslint-disable-next-line no-sparse-arrays
@@ -36,7 +36,7 @@ describe(MetadataService.name, () => {
   let mocks: ServiceMocks;
 
   beforeEach(() => {
-    ({ sut, mocks } = newTestService(MetadataService, { metadata: metadataRepository }));
+    ({ sut, mocks } = newMetadataService({ metadata: metadataRepository }));
 
     mocks.storage.stat.mockResolvedValue({
       size: 123_456,

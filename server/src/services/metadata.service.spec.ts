@@ -13,7 +13,7 @@ import { probeStub } from 'test/fixtures/media.stub';
 import { personStub } from 'test/fixtures/person.stub';
 import { tagStub } from 'test/fixtures/tag.stub';
 import { factory } from 'test/small.factory';
-import { makeStream, newTestService, ServiceMocks } from 'test/utils';
+import { makeStream, newMetadataService, ServiceMocks } from 'test/utils';
 
 const makeFaceTags = (face: Partial<{ Name: string }> = {}, orientation?: ImmichTags['Orientation']) => ({
   Orientation: orientation,
@@ -46,17 +46,13 @@ describe(MetadataService.name, () => {
   };
 
   beforeEach(() => {
-    ({ sut, mocks } = newTestService(MetadataService));
+    ({ sut, mocks } = newMetadataService());
 
     mockReadTags();
 
     mocks.config.getWorker.mockReturnValue(ImmichWorker.Microservices);
 
     delete process.env.TZ;
-  });
-
-  afterEach(async () => {
-    await sut.onShutdown();
   });
 
   it('should be defined', () => {
@@ -66,13 +62,11 @@ describe(MetadataService.name, () => {
   describe('onBootstrapEvent', () => {
     it('should pause and resume queue during init', async () => {
       mocks.job.pause.mockResolvedValue();
-      mocks.map.init.mockResolvedValue();
       mocks.job.resume.mockResolvedValue();
 
       await sut.onBootstrap();
 
       expect(mocks.job.pause).toHaveBeenCalledTimes(1);
-      expect(mocks.map.init).toHaveBeenCalledTimes(1);
       expect(mocks.job.resume).toHaveBeenCalledTimes(1);
     });
   });
