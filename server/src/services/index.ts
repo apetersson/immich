@@ -19,6 +19,7 @@ import { MediaService } from 'src/services/media.service';
 import { MemoryService } from 'src/services/memory.service';
 import { MetadataService } from 'src/services/metadata.service';
 import { NominatimService } from 'src/services/nominatim.service';
+import { HybridReverseGeocodeService } from 'src/services/hybrid-reverse-geocode.service';
 import { NotificationAdminService } from 'src/services/notification-admin.service';
 import { NotificationService } from 'src/services/notification.service';
 import { PartnerService } from 'src/services/partner.service';
@@ -66,6 +67,7 @@ export const services = [
   NotificationService,
   NotificationAdminService,
   NominatimService,
+  HybridReverseGeocodeService,
   PartnerService,
   PersonService,
   SearchService,

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { GeoPoint, ReverseGeocodeResult } from 'src/repositories/map.repository';
 import { BaseService } from 'src/services/base.service';
-import { parseStringPromise } from 'xml2js';
+
 
 @Injectable()
 export class NominatimService extends BaseService {
@@ -13,29 +13,29 @@ export class NominatimService extends BaseService {
     }
 
     try {
-      const url = `${nominatimUrl}?lat=${point.latitude}&lon=${point.longitude}&format=xml`;
+      const url = `${nominatimUrl}?lat=${point.latitude}&lon=${point.longitude}&format=json`;
       this.logger.debug(`Querying Nominatim: ${url}`);
 
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const xmlResult = await response.text();
+      const jsonResult = await response.json();
 
-      const result = await parseStringPromise(xmlResult, { explicitArray: false, ignoreAttrs: false });
+      const result = jsonResult;
 
-      if (!result || !result.reversegeocode || result.reversegeocode.error) {
+      if (!result || result.error) {
         this.logger.warn(
-          `Nominatim returned an error or no result for ${point.latitude},${point.longitude}: ${result?.reversegeocode?.error || 'No result'}`,
+          `Nominatim returned an error or no result for ${point.latitude},${point.longitude}: ${result?.error || 'No result'}`,
         );
         return null;
       }
 
-      const place = result.reversegeocode.result;
-      const addressparts = result.reversegeocode.addressparts;
+      const place = result;
+      const addressparts = result.address;
 
       // Rank Cutoff
-      const placeRank = Number.parseInt(place.$.place_rank, 10);
+      const placeRank = Number.parseInt(place.place_rank, 10);
       const minRankThreshold = 10; // Example threshold: consider anything below 10 (country-level) as too broad
 
       if (placeRank < minRankThreshold) {

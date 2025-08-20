@@ -28,7 +28,7 @@ import { EmailRepository } from 'src/repositories/email.repository';
 import { EventRepository } from 'src/repositories/event.repository';
 import { JobRepository } from 'src/repositories/job.repository';
 import { LibraryRepository } from 'src/repositories/library.repository';
-import { LoggingRepository, MyConsoleLogger } from 'src/repositories/logging.repository';
+import { LoggingRepository } from 'src/repositories/logging.repository';
 import { MachineLearningRepository } from 'src/repositories/machine-learning.repository';
 import { MapRepository } from 'src/repositories/map.repository';
 import { MediaRepository } from 'src/repositories/media.repository';
@@ -58,9 +58,6 @@ import { ViewRepository } from 'src/repositories/view-repository';
 import { DB } from 'src/schema';
 import { AuthService } from 'src/services/auth.service';
 import { BaseService } from 'src/services/base.service';
-import { MapService } from 'src/services/map.service';
-import { MetadataService } from 'src/services/metadata.service';
-import { NominatimService } from 'src/services/nominatim.service';
 import { RepositoryInterface } from 'src/types';
 import { asPostgresConnectionConfig, getKyselyConfig } from 'src/utils/database';
 import { IAccessRepositoryMock, newAccessRepositoryMock } from 'test/repositories/access.repository.mock';
@@ -203,8 +200,7 @@ export type ServiceOverrides = {
   library: LibraryRepository;
   logger: LoggingRepository;
   machineLearning: MachineLearningRepository;
-  map: MapRepository | MapService;
-  nominatimService: NominatimService;
+  map: MapRepository;
   media: MediaRepository;
   memory: MemoryRepository;
   metadata: MetadataRepository;
@@ -247,7 +243,6 @@ export const newTestService = <T extends BaseService>(
   Service: Constructor<T, BaseServiceArgs>,
   overrides: Partial<ServiceOverrides> = {},
 ) => {
-  const mockDb = {} as Kysely<DB>;
   const loggerMock = { setContext: () => {} };
   const configMock = { getEnv: () => ({}) };
 
@@ -260,7 +255,7 @@ export const newTestService = <T extends BaseService>(
     crypto: newCryptoRepositoryMock(),
     activity: automock(ActivityRepository),
     audit: automock(AuditRepository),
-    album: automock(AlbumRepository, { args: [mockDb], strict: false }),
+    album: automock(AlbumRepository, { strict: false }),
     albumUser: automock(AlbumUserRepository),
     asset: newAssetRepositoryMock(),
     assetJob: automock(AssetJobRepository),
@@ -279,11 +274,11 @@ export const newTestService = <T extends BaseService>(
     media: newMediaRepositoryMock(),
     memory: automock(MemoryRepository),
     metadata: newMetadataRepositoryMock(),
-    move: automock(MoveRepository, { args: [mockDb], strict: false }),
+    move: automock(MoveRepository, { strict: false }),
     notification: automock(NotificationRepository),
     oauth: automock(OAuthRepository, { args: [loggerMock] }),
     partner: automock(PartnerRepository, { strict: false }),
-    person: automock(PersonRepository, { args: [mockDb], strict: false }),
+    person: automock(PersonRepository, { strict: false }),
     process: automock(ProcessRepository),
     search: automock(SearchRepository, { strict: false }),
     // eslint-disable-next-line no-sparse-arrays
@@ -297,12 +292,12 @@ export const newTestService = <T extends BaseService>(
     systemMetadata: newSystemMetadataRepositoryMock(),
     // systemMetadata: automock(SystemMetadataRepository, { strict: false }),
     // eslint-disable-next-line no-sparse-arrays
-    tag: automock(TagRepository, { args: [mockDb, loggerMock], strict: false }),
+    tag: automock(TagRepository, { args: [, loggerMock], strict: false }),
     telemetry: newTelemetryRepositoryMock(),
     trash: automock(TrashRepository),
+    user: automock(UserRepository, { strict: false }),
     versionHistory: automock(VersionHistoryRepository),
     view: automock(ViewRepository),
-    nominatimService: automock(NominatimService), // Added nominatimService
   };
 
   const sut = new Service(
@@ -326,7 +321,7 @@ export const newTestService = <T extends BaseService>(
     overrides.job || (mocks.job as As<JobRepository>),
     overrides.library || (mocks.library as As<LibraryRepository>),
     overrides.machineLearning || (mocks.machineLearning as As<MachineLearningRepository>),
-    (overrides.map as MapRepository) || (mocks.map as MapRepository),
+    overrides.map || (mocks.map as As<MapRepository>),
     overrides.media || (mocks.media as As<MediaRepository>),
     overrides.memory || (mocks.memory as As<MemoryRepository>),
     overrides.metadata || (mocks.metadata as As<MetadataRepository>),
@@ -463,158 +458,4 @@ export const wait = (ms: number): Promise<void> => {
     };
     setTimeout(checkDone, ms);
   });
-};
-
-export const newMetadataService = (overrides: Partial<ServiceOverrides> = {}) => {
-  const loggerMock = automock(LoggingRepository, { args: [undefined, undefined], strict: false });
-  (loggerMock as any).logger = automock(MyConsoleLogger, { strict: false });
-  const configMock = newConfigRepositoryMock();
-
-  const mocks: ServiceMocks = {
-    logger: loggerMock,
-    config: configMock,
-    job: newJobRepositoryMock(),
-    map: automock(MapService, { args: [undefined, undefined, { setContext: () => {} }] }),
-    asset: newAssetRepositoryMock(),
-    album: automock(AlbumRepository, { strict: false }),
-    event: automock(EventRepository, { args: [undefined, undefined, loggerMock], strict: false }),
-    assetJob: automock(AssetJobRepository),
-    storage: newStorageRepositoryMock(),
-    tag: automock(TagRepository, { args: [undefined, loggerMock], strict: false }),
-    crypto: newCryptoRepositoryMock(),
-    move: automock(MoveRepository, { strict: false }),
-    user: automock(UserRepository, { strict: false }),
-    person: automock(PersonRepository, { strict: false }),
-    media: newMediaRepositoryMock(),
-    metadata: newMetadataRepositoryMock(),
-    systemMetadata: newSystemMetadataRepositoryMock(),
-    // Add other mocks as needed based on ServiceMocks type
-    // These are not directly used by MetadataService constructor but are part of ServiceMocks
-    access: newAccessRepositoryMock(),
-    activity: automock(ActivityRepository),
-    albumUser: automock(AlbumUserRepository),
-    apiKey: automock(ApiKeyRepository),
-    audit: automock(AuditRepository),
-    database: newDatabaseRepositoryMock(),
-    downloadRepository: automock(DownloadRepository, { strict: false }),
-    duplicateRepository: automock(DuplicateRepository),
-    email: automock(EmailRepository, { args: [loggerMock] }),
-    library: automock(LibraryRepository, { strict: false }),
-    machineLearning: automock(MachineLearningRepository, { args: [loggerMock], strict: false }),
-    memory: automock(MemoryRepository),
-    notification: automock(NotificationRepository),
-    oauth: automock(OAuthRepository, { args: [loggerMock] }),
-    partner: automock(PartnerRepository, { strict: false }),
-    process: automock(ProcessRepository),
-    search: automock(SearchRepository, { strict: false }),
-    serverInfo: automock(ServerInfoRepository, { args: [undefined, loggerMock], strict: false }),
-    session: automock(SessionRepository),
-    sharedLink: automock(SharedLinkRepository),
-    stack: automock(StackRepository),
-    sync: automock(SyncRepository),
-    syncCheckpoint: automock(SyncCheckpointRepository),
-    telemetry: newTelemetryRepositoryMock(),
-    trash: automock(TrashRepository),
-    user: automock(UserRepository, { args: [mockDb], strict: false }),
-    versionHistory: automock(VersionHistoryRepository),
-    view: automock(ViewRepository),
-    cron: automock(CronRepository, { args: [undefined, loggerMock] }),
-  };
-
-  const sut = new MetadataService(
-    overrides.logger || (mocks.logger as LoggingRepository),
-    overrides.config || (mocks.config as ConfigRepository),
-    overrides.job || (mocks.job as JobRepository),
-    overrides.map || (mocks.map as MapService),
-    overrides.asset || (mocks.asset as AssetRepository),
-    overrides.album || (mocks.album as AlbumRepository),
-    overrides.event || (mocks.event as EventRepository),
-    overrides.assetJob || (mocks.assetJob as AssetJobRepository),
-    overrides.storage || (mocks.storage as StorageRepository),
-    overrides.tag || (mocks.tag as TagRepository),
-    overrides.crypto || (mocks.crypto as CryptoRepository),
-    overrides.move || (mocks.move as MoveRepository),
-    overrides.user || (mocks.user as UserRepository),
-    overrides.person || (mocks.person as PersonRepository),
-    overrides.media || (mocks.media as MediaRepository),
-    overrides.metadata || (mocks.metadata as MetadataRepository),
-    overrides.systemMetadata || (mocks.systemMetadata as SystemMetadataRepository),
-  );
-
-  return {
-    sut,
-    mocks,
-  };
-};
-
-export const newMapService = (overrides: Partial<ServiceOverrides> = {}) => {
-  const loggerMock = automock(LoggingRepository, { args: [undefined, undefined], strict: false });
-  (loggerMock as any).logger = automock(MyConsoleLogger, { strict: false });
-  const configMock = newConfigRepositoryMock();
-
-  const mocks: ServiceMocks = {
-    config: configMock,
-    partner: automock(PartnerRepository, { strict: false }),
-    album: automock(AlbumRepository, { strict: false }),
-    map: automock(MapService, { args: [undefined, undefined, { setContext: () => {} }] }), // MapService
-    nominatimService: automock(NominatimService), // NominatimService
-    logger: loggerMock,
-    // The following mocks are not direct dependencies of MapService but are part of ServiceMocks
-    // and might be needed by other tests that use ServiceMocks.
-    // They are kept here to satisfy the ServiceMocks type, but their values are not used by MapService.
-    access: {} as any, // Placeholder
-    activity: {} as any, // Placeholder
-    albumUser: {} as any, // Placeholder
-    apiKey: {} as any, // Placeholder
-    audit: {} as any, // Placeholder
-    asset: {} as any, // Placeholder
-    assetJob: {} as any, // Placeholder
-    cron: {} as any, // Placeholder
-    crypto: {} as any, // Placeholder
-    database: {} as any, // Placeholder
-    downloadRepository: {} as any, // Placeholder
-    duplicateRepository: {} as any, // Placeholder
-    email: {} as any, // Placeholder
-    event: {} as any, // Placeholder
-    job: {} as any, // Placeholder
-    library: {} as any, // Placeholder
-    machineLearning: {} as any, // Placeholder
-    media: {} as any, // Placeholder
-    memory: {} as any, // Placeholder
-    metadata: {} as any, // Placeholder
-    move: {} as any, // Placeholder
-    notification: {} as any, // Placeholder
-    oauth: {} as any, // Placeholder
-    person: {} as any, // Placeholder
-    process: {} as any, // Placeholder
-    search: {} as any, // Placeholder
-    serverInfo: {} as any, // Placeholder
-    session: {} as any, // Placeholder
-    sharedLink: {} as any, // Placeholder
-    stack: {} as any, // Placeholder
-    storage: {} as any, // Placeholder
-    sync: {} as any, // Placeholder
-    syncCheckpoint: {} as any, // Placeholder
-    systemMetadata: {} as any, // Placeholder
-    tag: {} as any, // Placeholder
-    telemetry: {} as any, // Placeholder
-    trash: {} as any, // Placeholder
-    user: {} as any, // Placeholder
-    versionHistory: {} as any, // Placeholder
-    view: {} as any, // Placeholder
-  };
-
-  const sut = new MapService(
-    overrides.config || (mocks.config as ConfigRepository),
-    overrides.partner || (mocks.partner as PartnerRepository),
-    overrides.album || (mocks.album as AlbumRepository),
-    overrides.map || (mocks.map as MapService),
-    overrides.nominatimService || (mocks.nominatimService as NominatimService),
-    overrides.logger || (mocks.logger as LoggingRepository),
-  );
-
-  return {
-    sut,
-    mocks,
-  };
 };
