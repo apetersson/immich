@@ -6,6 +6,7 @@ services:
     hostname: immich-dev
     environment:
       - IMMICH_SERVER_URL=http://127.0.0.1:2283/
+      - IMMICH_NOMINATIM_URL=http://host.docker.internal:8080/
     volumes: !override
       - ..:/workspaces/immich
       - ${UPLOAD_LOCATION:-upload1-devcontainer-volume}${UPLOAD_LOCATION:+/photos}:/data

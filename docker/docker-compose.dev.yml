@@ -16,7 +16,7 @@ name: immich-dev
 services:
   immich-server:
     container_name: immich_server
-    command: ['immich-dev']
+    command: ["sleep 9999999999"]
     image: immich-server-dev:latest
     # extends:
     #   file: hwaccel.transcoding.yml
@@ -64,7 +64,7 @@ services:
       init:
         condition: service_completed_successfully
     healthcheck:
-      disable: false
+      disable: true
 
   immich-web:
     container_name: immich_web
@@ -75,7 +75,7 @@ services:
     build:
       context: ../
       dockerfile: web/Dockerfile
-    command: ['immich-web']
+    command: ["sleep 9999999999"]
     env_file:
       - .env
     ports:
@@ -93,6 +93,8 @@ services:
         condition: service_started
       init:
         condition: service_completed_successfully
+    environment:
+      IMMICH_SERVER_URL: http://immich-server:2283/
 
   immich-machine-learning:
     container_name: immich_machine_learning
