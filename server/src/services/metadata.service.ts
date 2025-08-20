@@ -1,53 +1,41 @@
-import { Injectable } from '@nestjs/common';
-import { ContainerDirectoryItem, ExifDateTime, Tags } from 'exiftool-vendored';
-import { Insertable } from 'kysely';
+import {Injectable} from '@nestjs/common';
+import {ContainerDirectoryItem, ExifDateTime, Tags} from 'exiftool-vendored';
+import {Insertable} from 'kysely';
 import _ from 'lodash';
-import { Duration } from 'luxon';
-import { Stats } from 'node:fs';
-import { constants } from 'node:fs/promises';
+import {Duration} from 'luxon';
+import {Stats} from 'node:fs';
+import {constants} from 'node:fs/promises';
 import path from 'node:path';
-import { JOBS_ASSET_PAGINATION_SIZE } from 'src/constants';
-import { StorageCore } from 'src/cores/storage.core';
-import { Asset, AssetFace } from 'src/database';
-import { OnEvent, OnJob } from 'src/decorators';
-import {
-  AssetType,
-  AssetVisibility,
-  DatabaseLock,
-  ExifOrientation,
-  ImmichWorker,
-  JobName,
-  JobStatus,
-  QueueName,
-  SourceType,
-} from 'src/enum';
-import { ArgOf } from 'src/repositories/event.repository';
-import {  ReverseGeocodeResult } from 'src/repositories/map.repository';
-import { ImmichTags } from 'src/repositories/metadata.repository';
-import { AssetExifTable } from 'src/schema/tables/asset-exif.table';
-import { AssetFaceTable } from 'src/schema/tables/asset-face.table';
-import { PersonTable } from 'src/schema/tables/person.table';
-import { ConfigRepository } from 'src/repositories/config.repository';
-import { JobRepository } from 'src/repositories/job.repository';
-import { MapService } from 'src/services/map.service';
-import { AssetRepository } from 'src/repositories/asset.repository';
-import { AlbumRepository } from 'src/repositories/album.repository';
-import { EventRepository } from 'src/repositories/event.repository';
-import { AssetJobRepository } from 'src/repositories/asset-job.repository';
-import { StorageRepository } from 'src/repositories/storage.repository';
-import { TagRepository } from 'src/repositories/tag.repository';
-import { CryptoRepository } from 'src/repositories/crypto.repository';
-import { UserRepository } from 'src/repositories/user.repository';
-import { PersonRepository } from 'src/repositories/person.repository';
-import { MediaRepository } from 'src/repositories/media.repository';
-import { MetadataRepository } from 'src/repositories/metadata.repository';
-import { LoggingRepository } from 'src/repositories/logging.repository';
-import { SystemMetadataRepository } from 'src/repositories/system-metadata.repository';
-import { MoveRepository } from 'src/repositories/move.repository';
-import { JobItem, JobOf } from 'src/types';
-import { isFaceImportEnabled } from 'src/utils/misc';
-import { upsertTags } from 'src/utils/tag';
-import { getConfig } from 'src/utils/config';
+import {JOBS_ASSET_PAGINATION_SIZE} from 'src/constants';
+import {StorageCore} from 'src/cores/storage.core';
+import {Asset, AssetFace} from 'src/database';
+import {OnEvent, OnJob} from 'src/decorators';
+import {AssetType, AssetVisibility, ExifOrientation, JobName, JobStatus, QueueName, SourceType,} from 'src/enum';
+import {ArgOf, EventRepository} from 'src/repositories/event.repository';
+import {ReverseGeocodeResult} from 'src/repositories/map.repository';
+import {ImmichTags, MetadataRepository} from 'src/repositories/metadata.repository';
+import {AssetExifTable} from 'src/schema/tables/asset-exif.table';
+import {AssetFaceTable} from 'src/schema/tables/asset-face.table';
+import {PersonTable} from 'src/schema/tables/person.table';
+import {ConfigRepository} from 'src/repositories/config.repository';
+import {JobRepository} from 'src/repositories/job.repository';
+import {MapService} from 'src/services/map.service';
+import {AssetRepository} from 'src/repositories/asset.repository';
+import {AlbumRepository} from 'src/repositories/album.repository';
+import {AssetJobRepository} from 'src/repositories/asset-job.repository';
+import {StorageRepository} from 'src/repositories/storage.repository';
+import {TagRepository} from 'src/repositories/tag.repository';
+import {CryptoRepository} from 'src/repositories/crypto.repository';
+import {UserRepository} from 'src/repositories/user.repository';
+import {PersonRepository} from 'src/repositories/person.repository';
+import {MediaRepository} from 'src/repositories/media.repository';
+import {LoggingRepository} from 'src/repositories/logging.repository';
+import {SystemMetadataRepository} from 'src/repositories/system-metadata.repository';
+import {MoveRepository} from 'src/repositories/move.repository';
+import {JobItem, JobOf} from 'src/types';
+import {isFaceImportEnabled} from 'src/utils/misc';
+import {upsertTags} from 'src/utils/tag';
+import {getConfig} from 'src/utils/config';
 
 /** look for a date from these tags (in order) */
 const EXIF_DATE_TAGS: Array<keyof ImmichTags> = [
@@ -163,7 +151,6 @@ export class MetadataService {
     private mediaRepository: MediaRepository,
     private metadataRepository: MetadataRepository,
     private systemMetadataRepository: SystemMetadataRepository,
-
   ) {
     this.logger.setContext(MetadataService.name);
     this.storageCore = StorageCore.create(
@@ -177,7 +164,6 @@ export class MetadataService {
       this.logger,
     );
   }
-
 
   private async linkLivePhotos(
     asset: { id: string; type: AssetType; ownerId: string; libraryId: string | null },
@@ -231,7 +217,7 @@ export class MetadataService {
   @OnJob({ name: JobName.AssetExtractMetadata, queue: QueueName.MetadataExtraction })
   async handleMetadataExtraction(data: JobOf<JobName.AssetExtractMetadata>) {
     const [{ metadata, reverseGeocoding }, asset] = await Promise.all([
-      getConfig({ withCache: true }),
+      this.getConfig({ withCache: true }),
       this.assetJobRepository.getForMetadataExtraction(data.id),
     ]);
 
@@ -961,5 +947,16 @@ export class MetadataService {
     await this.assetRepository.update({ id: asset.id, sidecarPath: null });
 
     return JobStatus.Success;
+  }
+
+  getConfig(options: { withCache: boolean }) {
+    return getConfig(
+      {
+        configRepo: this.configRepository,
+        metadataRepo: this.systemMetadataRepository,
+        logger: this.logger,
+      },
+      options,
+    );
   }
 }
