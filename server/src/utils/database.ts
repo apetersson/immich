@@ -14,7 +14,7 @@ import {
 import { PostgresJSDialect } from 'kysely-postgres-js';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/postgres';
 import { parse } from 'pg-connection-string';
-import postgres, { Notice } from 'postgres';
+import postgres, { Notice, PostgresError } from 'postgres';
 import { columns, Exif, Person } from 'src/database';
 import { AssetFileType, AssetVisibility, DatabaseExtension, DatabaseSslMode } from 'src/enum';
 import { AssetSearchBuilderOptions } from 'src/repositories/search.repository';
@@ -153,6 +153,10 @@ export function toJson<DB, TB extends keyof DB & string, T extends TB | Expressi
 
 export const ASSET_CHECKSUM_CONSTRAINT = 'UQ_assets_owner_checksum';
 
+export const isAssetChecksumConstraint = (error: unknown) => {
+  return (error as PostgresError)?.constraint_name === 'UQ_assets_owner_checksum';
+};
+
 export function withDefaultVisibility<O>(qb: SelectQueryBuilder<DB, 'asset', O>) {
   return qb.where('asset.visibility', 'in', [sql.lit(AssetVisibility.Archive), sql.lit(AssetVisibility.Timeline)]);
 }
@@ -194,6 +198,14 @@ export function withFiles(eb: ExpressionBuilder<DB, 'asset'>, type?: AssetFileTy
       .whereRef('asset_file.assetId', '=', 'asset.id')
       .$if(!!type, (qb) => qb.where('asset_file.type', '=', type!)),
   ).as('files');
+}
+
+export function withFilePath(eb: ExpressionBuilder<DB, 'asset'>, type: AssetFileType) {
+  return eb
+    .selectFrom('asset_file')
+    .select('asset_file.path')
+    .whereRef('asset_file.assetId', '=', 'asset.id')
+    .where('asset_file.type', '=', type);
 }
 
 export function withFacesAndPeople(eb: ExpressionBuilder<DB, 'asset'>, withDeletedFace?: boolean) {
@@ -375,6 +387,11 @@ export function searchAssetBuilder(kysely: Kysely<DB>, options: AssetSearchBuild
       qb
         .innerJoin('asset_exif', 'asset.id', 'asset_exif.assetId')
         .where(sql`f_unaccent(asset_exif.description)`, 'ilike', sql`'%' || f_unaccent(${options.description}) || '%'`),
+    )
+    .$if(!!options.ocr, (qb) =>
+      qb
+        .innerJoin('ocr_search', 'asset.id', 'ocr_search.assetId')
+        .where(() => sql`f_unaccent(ocr_search.text) %>> f_unaccent(${options.ocr!})`),
     )
     .$if(!!options.type, (qb) => qb.where('asset.type', '=', options.type!))
     .$if(options.isFavorite !== undefined, (qb) => qb.where('asset.isFavorite', '=', options.isFavorite!))
